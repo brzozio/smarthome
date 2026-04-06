@@ -41,6 +41,19 @@ services:
       - mqtt-net
     restart: unless-stopped
 
+  webserver:
+    build:
+      context: ./web
+      dockerfile: Dockerfile-web
+    container_name: webserver
+    command: ["npm", "run", "dev", "--", "--host"]
+    ports:
+      - "5173:5173"
+    depends_on:
+      - db-api
+    networks:
+      - mqtt-net
+
 networks:
   mqtt-net:
     driver: bridge

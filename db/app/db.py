@@ -6,7 +6,6 @@ import pendulum
 local_tz = pendulum.timezone('Europe/Warsaw')
 
 DATABASE_URL: str = "sqlite:////data/climate.db"
-LOG_FORMAT:   str = '%d.%m.%Y %H:%M:%S'
 
 engine = create_engine(
     DATABASE_URL,
@@ -22,7 +21,7 @@ class Climate(Base):
     id           = Column(Integer, primary_key=True, index=True)
     temperature  = Column(Float, nullable=False)
     humidity     = Column(Float, nullable=False)
-    created_at   = Column(DateTime, default=datetime.now(tz=local_tz).strftime(LOG_FORMAT))
+    created_at   = Column(DateTime, default=datetime.now(tz=local_tz))
 
 def init_db():
     Base.metadata.create_all(bind=engine)
