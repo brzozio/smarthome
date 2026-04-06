@@ -8,7 +8,7 @@ const char* WIFI_PASSWORD = "";
 
 const char* MQTT_SERVER = "192.168.1.154";
 const int MQTT_PORT = 1883;
-const char* MQTT_TOPIC = "esp32/temperature";
+const char* MQTT_TOPIC = "esp32/climate";
 
 // ==== DHT11 ====
 #define DHTPIN 8

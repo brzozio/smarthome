@@ -1,17 +1,17 @@
 import os
 import json
+import requests
 import paho.mqtt.client as mqtt
 from datetime import datetime
 import pendulum
 
 local_tz = pendulum.timezone('Europe/Warsaw')
 
-MQTT_HOST:  str = os.getenv("MQTT_HOST")
-MQTT_PORT:  int = int(os.getenv("MQTT_PORT"))
-MQTT_TOPIC: str = os.getenv("MQTT_TOPIC")
-
+MQTT_HOST:  str = "mqtt-server"
+MQTT_PORT:  int = 1883
+MQTT_TOPIC: str = "esp32/climate"
 LOG_FORMAT: str = '%d.%m.%Y %H:%M:%S'
-
+API_URL:    str = "http://db-api:8000/api/v1/climate"
 
 def on_connect(client, userdata, flags, reason_code, properties=None) -> None:
     if reason_code == 0:
@@ -26,11 +26,27 @@ def on_message(client, userdata, msg) -> None:
         payload = msg.payload.decode()
         data = json.loads(payload)
 
-        temp = data.get("temp")
-        humidity = data.get("hum")
+        temp:     float = data.get("temp")
+        humidity: float = data.get("hum")
 
         print(f"[{datetime.now(tz=local_tz).strftime(LOG_FORMAT)}] Temperature: {temp} °C")
         print(f"[{datetime.now(tz=local_tz).strftime(LOG_FORMAT)}] Humidity: {humidity} %")
+
+        # --- SEND TO API ---
+        if temp is not None:
+            response = requests.post(
+                API_URL,
+                json={
+                    "temperature": temp,
+                    "humidity": humidity
+                },
+                timeout=3
+            )
+
+            if response.status_code != 200:
+                print(f"[API ERROR] {response.status_code} {response.text}")
+            else:
+                print(f"[API OK] {response.json()}")
 
     except Exception as e:
         print(f"[{datetime.now(tz=local_tz).strftime(LOG_FORMAT)}] Error processing message: {e}")
