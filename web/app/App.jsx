@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   AreaChart,
   Area,
@@ -9,17 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const API_URL = "http://localhost:8000/api/v1/climateAll";
-
-/* ── Mock data (wyłącz gdy masz prawdziwe API) ─────────────── */
-const generateMock = () => {
-  const now = Date.now();
-  return Array.from({ length: 30 }, (_, i) => ({
-    time: now - (29 - i) * 10_000,
-    temperature: +(20 + Math.sin(i / 4) * 4 + Math.random()).toFixed(1),
-    humidity: +(55 + Math.cos(i / 5) * 10 + Math.random()).toFixed(1),
-  }));
-};
+const API_URL = "http://192.168.1.154:8000/api/v1/climateAll";
 
 /* ── Custom Tooltip ────────────────────────────────────────── */
 function CustomTooltip({ active, payload, label, unit, color }) {
@@ -41,7 +31,7 @@ function CustomTooltip({ active, payload, label, unit, color }) {
       </div>
       <div style={{ color, fontWeight: 700, fontSize: 16 }}>
         {payload[0].value}
-        <span style={{ fontSize: 11, marginLeft: 3, opacity: 0.7 }}>{unit}</span>
+        <span style={{ fontSize: 15, marginLeft: 3, opacity: 0.7 }}>{unit}</span>
       </div>
     </div>
   );
@@ -49,6 +39,17 @@ function CustomTooltip({ active, payload, label, unit, color }) {
 
 /* ── Single Chart Card ─────────────────────────────────────── */
 function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, maxY, latest }) {
+
+  const stats = useMemo(() => {
+    if (!data.length) return null;
+
+    return {
+      min: Math.min(...data.map((d) => d[dataKey])),
+      max: Math.max(...data.map((d) => d[dataKey])),
+      avg: +(data.reduce((s, d) => s + d[dataKey], 0) / data.length).toFixed(1),
+    };
+  }, [data, dataKey]);
+
   return (
     <div
       style={{
@@ -60,6 +61,8 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
         minWidth: 0,
         position: "relative",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* Decorative glow */}
@@ -80,11 +83,11 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 18 }}>{icon}</span>
+            <span style={{ fontSize: 35 }}>{icon}</span>
             <span
               style={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 11,
+                fontSize: 25,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 color: "#4a5568",
@@ -96,7 +99,7 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
           <div
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 42,
+              fontSize: 60,
               fontWeight: 700,
               color: "#e8edf5",
               lineHeight: 1,
@@ -107,7 +110,7 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
             <span
               style={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 16,
+                fontSize: 35,
                 fontWeight: 400,
                 color: color,
                 marginLeft: 6,
@@ -118,45 +121,11 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
             </span>
           </div>
         </div>
-
-        {/* Live badge */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: "#0d1f12",
-            border: "1px solid #1a3a22",
-            borderRadius: 20,
-            padding: "4px 10px",
-          }}
-        >
-          <div
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: "#22c55e",
-              boxShadow: "0 0 6px #22c55e",
-              animation: "pulse 2s infinite",
-            }}
-          />
-          <span
-            style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 10,
-              color: "#22c55e",
-              letterSpacing: "0.08em",
-            }}
-          >
-            LIVE
-          </span>
-        </div>
       </div>
 
       {/* Chart */}
-      <div style={{ width: "100%", height: 200 }}>
-        <ResponsiveContainer>
+      <div style={{ width: "100%", flex: 1, minHeight: 220 }}>
+        <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -165,11 +134,7 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
               </linearGradient>
             </defs>
 
-            <CartesianGrid
-              strokeDasharray="2 4"
-              stroke="#1e2a38"
-              vertical={false}
-            />
+            <CartesianGrid strokeDasharray="2 4" stroke="#1e2a38" vertical={false} />
 
             <XAxis
               dataKey="time"
@@ -184,7 +149,7 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
               }
               tick={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10,
+                fontSize: 25,
                 fill: "#3a4a5a",
               }}
               tickLine={false}
@@ -193,10 +158,13 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
             />
 
             <YAxis
-              domain={[minY, maxY]}
+              domain={[
+                (dataMin) => Math.floor(dataMin - 1),
+                (dataMax) => Math.ceil(dataMax + 1),
+              ]}
               tick={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10,
+                fontSize: 25,
                 fill: "#3a4a5a",
               }}
               tickLine={false}
@@ -228,7 +196,7 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
       </div>
 
       {/* Bottom stats */}
-      {data.length > 0 && (
+      {stats && (
         <div
           style={{
             display: "flex",
@@ -239,18 +207,15 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
           }}
         >
           {[
-            { label: "MIN", val: Math.min(...data.map((d) => d[dataKey])) },
-            { label: "MAX", val: Math.max(...data.map((d) => d[dataKey])) },
-            {
-              label: "AVG",
-              val: +(data.reduce((s, d) => s + d[dataKey], 0) / data.length).toFixed(1),
-            },
+            { label: "MIN", val: stats.min },
+            { label: "MAX", val: stats.max },
+            { label: "AVG", val: stats.avg },
           ].map(({ label, val }) => (
             <div key={label}>
               <div
                 style={{
                   fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: 9,
+                  fontSize: 14,
                   letterSpacing: "0.1em",
                   color: "#3a4a5a",
                   marginBottom: 2,
@@ -261,13 +226,13 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
               <div
                 style={{
                   fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: 13,
+                  fontSize: 25,
                   fontWeight: 600,
                   color: "#8a9ab0",
                 }}
               >
                 {val}
-                <span style={{ fontSize: 10, color: color, marginLeft: 2, opacity: 0.7 }}>
+                <span style={{ fontSize: 25, color: color, marginLeft: 2, opacity: 0.7 }}>
                   {unit}
                 </span>
               </div>
@@ -281,12 +246,13 @@ function ChartCard({ title, data, dataKey, unit, color, gradientId, icon, minY, 
 
 /* ── App ───────────────────────────────────────────────────── */
 export default function App() {
-  const [data, setData] = useState(generateMock());
+  const [data, setData] = useState([]);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch(API_URL);
       const json = await res.json();
+
       const formatted = json
         .map((item) => ({
           time: new Date(item.created_at).getTime(),
@@ -294,19 +260,37 @@ export default function App() {
           humidity: item.humidity,
         }))
         .sort((a, b) => a.time - b.time);
+
       setData(formatted);
-    } catch {
-      // zostają mock dane jeśli API niedostępne
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
+    let alive = true;
+
+    const loop = async () => {
+      while (alive) {
+        await fetchData();
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    };
+
+    loop();
+
+    return () => {
+      alive = false;
+    };
   }, [fetchData]);
 
   const latest = data[data.length - 1];
+
+  if (!data.length) {
+    return (
+      <div style={{ color: "#3a4a5a", padding: 20 }}>
+        Brak danych z API
+      </div>
+    );
+  }
 
   return (
     <>
@@ -340,7 +324,7 @@ export default function App() {
           <div>
             <h1
               style={{
-                fontSize: 22,
+                fontSize: 32,
                 fontWeight: 700,
                 color: "#c8d4e0",
                 letterSpacing: "-0.02em",
@@ -351,7 +335,7 @@ export default function App() {
             <p
               style={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 11,
+                fontSize: 25,
                 color: "#3a4a5a",
                 marginTop: 3,
                 letterSpacing: "0.05em",
@@ -363,7 +347,7 @@ export default function App() {
           <div
             style={{
               fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 11,
+              fontSize: 25,
               color: "#3a4a5a",
             }}
           >
@@ -376,10 +360,12 @@ export default function App() {
         {/* Charts */}
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
-            flexWrap: "wrap",
+            flex: 1,
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 16,
+            minHeight: 0,
+            height: "calc(100vh - 140px)",
           }}
         >
           <ChartCard
