@@ -21,7 +21,7 @@ class Climate(Base):
     id           = Column(Integer, primary_key=True, index=True)
     temperature  = Column(Float, nullable=False)
     humidity     = Column(Float, nullable=False)
-    created_at   = Column(DateTime, default=datetime.now(tz=local_tz))
+    created_at   = Column(DateTime, default=lambda: datetime.now(tz=local_tz))
 
 def init_db():
     Base.metadata.create_all(bind=engine)
