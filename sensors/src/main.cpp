@@ -6,7 +6,7 @@
 const char* WIFI_SSID = "";
 const char* WIFI_PASSWORD = "";
 
-const char* MQTT_SERVER = "192.168.1.100"; // your broker IP
+const char* MQTT_SERVER = "192.168.1.154";
 const int MQTT_PORT = 1883;
 const char* MQTT_TOPIC = "esp32/temperature";
 
@@ -33,6 +33,13 @@ void connectWiFi() {
     }
 
     Serial.println("WiFi OK");
+    Serial.printf(
+        "IP: %s\nGW: %s\nRSSI: %d\nMAC: %s\n",
+        WiFi.localIP().toString().c_str(),
+        WiFi.gatewayIP().toString().c_str(),
+        WiFi.RSSI(),
+        WiFi.macAddress().c_str()
+    );
 }
 
 void connectMQTT() {
@@ -40,8 +47,15 @@ void connectMQTT() {
         String clientId = "ESP32-" + String(random(0xffff), HEX);
 
         if (client.connect(clientId.c_str())) {
-            // connected
+            Serial.println("MQTT CONNECTED");
         } else {
+            Serial.printf("Connecting to MQTT server: %s:%d, topic: %s\n",
+              MQTT_SERVER,
+              MQTT_PORT,
+              MQTT_TOPIC
+            );
+            Serial.print("MQTT FAIL, state=");
+            Serial.println(client.state());
             delay(2000);
         }
     }
